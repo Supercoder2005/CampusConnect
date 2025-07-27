@@ -1,8 +1,9 @@
 'use client';
 
-import { School, UserCog, History, User, GraduationCap } from 'lucide-react';
+import { School, UserCog, History, User, GraduationCap, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,12 +16,43 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import Logo from '@/components/icons/Logo';
+import { useToast } from '@/hooks/use-toast';
+import { verifyAdminCredentials } from '@/actions/auth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('srinjinee@campusconnect.edu');
+  const [password, setPassword] = useState('admin@123');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (role: 'admin' | 'teacher' | 'student' | 'parent') => {
-    router.push(`/${role}/dashboard`);
+
+  const handleLogin = async (role: 'admin' | 'teacher' | 'student' | 'parent') => {
+    if (role === 'admin') {
+      setIsLoading(true);
+      try {
+        const isValid = await verifyAdminCredentials({ email, password });
+        if (isValid) {
+          router.push('/admin/dashboard');
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Invalid credentials for admin.",
+          });
+        }
+      } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Login Error",
+            description: "An error occurred during login. Please try again.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      router.push(`/${role}/dashboard`);
+    }
   };
 
   return (
@@ -54,16 +86,17 @@ export default function LoginPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="user@example.com" defaultValue="demo@campusconnect.edu"/>
+                  <Input id="email" type="email" placeholder="user@example.com" value={email} onChange={(e) => setEmail(e.target.value)}/>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" defaultValue="password"/>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}/>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-                <Button onClick={() => handleLogin('admin')} className="w-full">
-                  <UserCog className="mr-2 h-4 w-4" /> Login as Admin
+                <Button onClick={() => handleLogin('admin')} className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCog className="mr-2 h-4 w-4" />}
+                  Login as Admin
                 </Button>
                 <Button onClick={() => handleLogin('teacher')} className="w-full">
                   <GraduationCap className="mr-2 h-4 w-4" /> Login as Teacher
