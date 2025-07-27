@@ -1,10 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Wand2, Loader2, Copy } from 'lucide-react';
+import { Wand2, Loader2, Copy, Send } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import type { GenerateAnnouncementOutput } from '@/ai/flows/announcement-generator';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase';
 
 const formSchema = z.object({
   description: z.string().min(10, {
@@ -33,7 +35,8 @@ type AnnouncementGeneratorProps = {
 };
 
 export default function AnnouncementGenerator({ generate }: AnnouncementGeneratorProps) {
-  const [isPending, startTransition] = useTransition();
+  const [isGenerating, startGeneration] = useTransition();
+  const [isPublishing, setIsPublishing] = useState(false);
   const [generatedText, setGeneratedText] = useState('');
   const { toast } = useToast();
 
@@ -45,7 +48,8 @@ export default function AnnouncementGenerator({ generate }: AnnouncementGenerato
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    startTransition(async () => {
+    startGeneration(async () => {
+      setGeneratedText('');
       const result = await generate(values);
       if (result?.announcementText) {
         setGeneratedText(result.announcementText);
@@ -65,6 +69,33 @@ export default function AnnouncementGenerator({ generate }: AnnouncementGenerato
         title: "Copied!",
         description: "Announcement text copied to clipboard.",
     })
+  }
+
+  const handlePublish = async () => {
+    if (!generatedText) return;
+    setIsPublishing(true);
+    try {
+        await addDoc(collection(db, 'announcements'), {
+            announcementText: generatedText,
+            createdAt: serverTimestamp(),
+            author: 'Admin'
+        });
+        toast({
+            title: "Published!",
+            description: "The announcement has been published.",
+        });
+        setGeneratedText('');
+        form.reset();
+    } catch (error) {
+        console.error('Error publishing announcement: ', error);
+        toast({
+            variant: "destructive",
+            title: "Publishing Failed",
+            description: "Could not publish the announcement. Please try again."
+        });
+    } finally {
+        setIsPublishing(false);
+    }
   }
 
   return (
@@ -90,8 +121,8 @@ export default function AnnouncementGenerator({ generate }: AnnouncementGenerato
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
+          <Button type="submit" disabled={isGenerating}>
+            {isGenerating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Wand2 className="mr-2 h-4 w-4" />
@@ -100,20 +131,36 @@ export default function AnnouncementGenerator({ generate }: AnnouncementGenerato
           </Button>
         </form>
       </Form>
-      {generatedText && (
+      {(isGenerating || generatedText) && (
         <div className="space-y-2">
             <div className="flex items-center justify-between">
                 <FormLabel>Generated Announcement</FormLabel>
-                <Button variant="ghost" size="sm" onClick={handleCopy}>
-                    <Copy className="mr-2 h-4 w-4"/>
-                    Copy
-                </Button>
+                {generatedText && (
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={handleCopy}>
+                            <Copy className="mr-2 h-4 w-4"/>
+                            Copy
+                        </Button>
+                         <Button size="sm" onClick={handlePublish} disabled={isPublishing}>
+                            {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
+                            Publish
+                        </Button>
+                    </div>
+                )}
             </div>
-            <Textarea
-                readOnly
-                value={generatedText}
-                className="min-h-[150px] bg-secondary"
-            />
+             {isGenerating && !generatedText && (
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-1/4" />
+                    <Skeleton className="h-20 w-full" />
+                </div>
+            )}
+            {generatedText && (
+                <Textarea
+                    readOnly
+                    value={generatedText}
+                    className="min-h-[150px] bg-secondary"
+                />
+            )}
         </div>
       )}
     </div>

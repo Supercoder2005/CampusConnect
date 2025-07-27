@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { collection, query, orderBy, onSnapshot, Timestamp, addDoc } from 'firebase/firestore';
 import { PlusCircle, Search } from 'lucide-react';
 import { DashboardHeader } from '@/components/common/DashboardHeader';
 import { Button } from '@/components/ui/button';
@@ -5,16 +9,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { db } from '@/lib/firebase';
 
-const feeRecords = [
-    { student: "Liam Johnson", invoiceId: "INV-1023", amount: "$500", status: "Paid", dueDate: "2024-09-01" },
-    { student: "Noah Williams", invoiceId: "INV-1024", amount: "$500", status: "Paid", dueDate: "2024-09-01" },
-    { student: "Ava Miller", invoiceId: "INV-1025", amount: "$500", status: "Overdue", dueDate: "2024-09-01" },
-    { student: "Elijah Davis", invoiceId: "INV-1026", amount: "$500", status: "Pending", dueDate: "2024-10-01" },
-    { student: "Charlotte Garcia", invoiceId: "INV-1027", amount: "$500", status: "Paid", dueDate: "2024-09-01" },
-];
+type FeeRecord = {
+  id: string;
+  student: string;
+  invoiceId: string;
+  amount: string;
+  status: 'Paid' | 'Overdue' | 'Pending';
+  dueDate: string;
+};
 
 export default function FeeManagementPage() {
+    const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const q = query(collection(db, 'fees'), orderBy('dueDate'));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const records: FeeRecord[] = [];
+            querySnapshot.forEach((doc) => {
+                records.push({ id: doc.id, ...doc.data() } as FeeRecord);
+            });
+            setFeeRecords(records);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching fees: ", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     return (
         <div className="flex flex-col">
             <DashboardHeader title="Fee Management" />
@@ -47,25 +74,44 @@ export default function FeeManagementPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {feeRecords.map((record, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell className="font-medium">{record.student}</TableCell>
-                                        <TableCell>{record.invoiceId}</TableCell>
-                                        <TableCell>{record.amount}</TableCell>
-                                        <TableCell>
-                                            <Badge 
-                                                variant={record.status === 'Paid' ? 'default' : (record.status === 'Overdue' ? 'destructive' : 'outline')}
-                                                className={record.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : ''}
-                                            >
-                                                {record.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{record.dueDate}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm">View</Button>
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                            <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : feeRecords.length > 0 ? (
+                                    feeRecords.map((record) => (
+                                        <TableRow key={record.id}>
+                                            <TableCell className="font-medium">{record.student}</TableCell>
+                                            <TableCell>{record.invoiceId}</TableCell>
+                                            <TableCell>{record.amount}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={record.status === 'Paid' ? 'default' : (record.status === 'Overdue' ? 'destructive' : 'outline')}
+                                                    className={record.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : ''}
+                                                >
+                                                    {record.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{record.dueDate}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm">View</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            No fee records found.
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>

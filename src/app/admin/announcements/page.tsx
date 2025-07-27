@@ -2,6 +2,7 @@ import { generateAnnouncement } from '@/ai/flows/announcement-generator';
 import { DashboardHeader } from '@/components/common/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AnnouncementGenerator from './AnnouncementGenerator';
+import { PublishedAnnouncements } from './PublishedAnnouncements';
 
 export default function AnnouncementsPage() {
   return (
@@ -28,9 +29,7 @@ export default function AnnouncementsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center text-muted-foreground py-8">
-                  <p>No announcements published yet.</p>
-                </div>
+                <PublishedAnnouncements />
               </CardContent>
             </Card>
         </div>
