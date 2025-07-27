@@ -11,23 +11,16 @@ type Credentials = {
 export async function verifyAdminCredentials({ email, password }: Credentials): Promise<boolean> {
     try {
         const adminRef = collection(db, 'admin');
-        const q = query(adminRef, where('credentialName', '==', email));
+        const q = query(adminRef, where('credentialName', '==', email), where('credentialPassword', '==', password));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            console.log('No matching admin found');
+            console.log('No matching admin found or credentials incorrect');
             return false;
         }
 
-        const adminDoc = querySnapshot.docs[0];
-        const adminData = adminDoc.data();
+        return true;
 
-        if (adminData.credentialPassword === password) {
-            return true;
-        } else {
-            console.log('Password does not match');
-            return false;
-        }
     } catch (error) {
         console.error("Error verifying admin credentials:", error);
         return false;
