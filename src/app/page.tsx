@@ -22,7 +22,7 @@ import { verifyAdminCredentials } from '@/actions/auth';
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('srinjinee@campusconnect.edu');
+  const [email, setEmail] = useState('amitava@campusconnect.edu');
   const [password, setPassword] = useState('admin@123');
   const [isLoading, setIsLoading] = useState(false);
 
