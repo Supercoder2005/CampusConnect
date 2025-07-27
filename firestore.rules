@@ -2,17 +2,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow read access for the admin login check.
-    // In a real application, you should secure this further,
-    // possibly by moving to Firebase Authentication.
+    // Allow admin login check
     match /admin/{docId} {
       allow read: if true;
-      allow write: if false; // No one should write directly
+      allow write: if false; // Admins are managed directly in the console
     }
 
-    // Secure all other collections by default.
-    // You should grant access based on user roles and authentication.
+    // Allow creating users
+    match /users/{userId} {
+      allow read, write: if true; // In production, restrict to authenticated admins
+    }
+
+    // Allow managing classes
+    match /classes/{classId} {
+      allow read, write: if true; // In production, restrict to authenticated admins/teachers
+    }
+
+    // Allow managing announcements
+    match /announcements/{announcementId} {
+      allow read, write: if true; // In production, restrict to authenticated admins
+    }
+
+    // Allow managing fees
+    match /fees/{feeId} {
+      allow read, write: if true; // In production, restrict to authenticated admins
+    }
+
+    // Default deny for any other collection
     match /{document=**} {
       allow read, write: if false;
     }
