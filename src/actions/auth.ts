@@ -11,19 +11,25 @@ type Credentials = {
 export async function verifyAdminCredentials({ email, password }: Credentials): Promise<boolean> {
     try {
         if (!email || !password) {
+            console.log('Login failed: Email or password not provided.');
             return false;
         }
 
         const adminRef = collection(db, 'admin');
-        const q = query(adminRef, where('credentialName', '==', email), where('credentialPassword', '==', password));
+        const q = query(
+            adminRef,
+            where('credentialName', '==', email),
+            where('credentialPassword', '==', password)
+        );
+        
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            console.log('No matching admin found or credentials incorrect');
+            console.log(`Login failed: No matching admin found for email: ${email}`);
             return false;
         }
 
-        // If we get here, it means a document with matching credentials was found.
+        console.log(`Login successful: Found admin with email: ${email}`);
         return true;
 
     } catch (error) {
