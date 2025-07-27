@@ -11,7 +11,7 @@ type Credentials = {
 export async function verifyAdminCredentials({ email, password }: Credentials): Promise<boolean> {
     try {
         const adminRef = collection(db, 'admin');
-        const q = query(adminRef, where('email', '==', email));
+        const q = query(adminRef, where('credentialName', '==', email));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -22,7 +22,7 @@ export async function verifyAdminCredentials({ email, password }: Credentials): 
         const adminDoc = querySnapshot.docs[0];
         const adminData = adminDoc.data();
 
-        if (adminData.password === password) {
+        if (adminData.credentialPassword === password) {
             return true;
         } else {
             console.log('Password does not match');
