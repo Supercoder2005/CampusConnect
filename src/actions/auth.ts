@@ -10,6 +10,10 @@ type Credentials = {
 
 export async function verifyAdminCredentials({ email, password }: Credentials): Promise<boolean> {
     try {
+        if (!email || !password) {
+            return false;
+        }
+
         const adminRef = collection(db, 'admin');
         const q = query(adminRef, where('credentialName', '==', email), where('credentialPassword', '==', password));
         const querySnapshot = await getDocs(q);
@@ -19,6 +23,7 @@ export async function verifyAdminCredentials({ email, password }: Credentials): 
             return false;
         }
 
+        // If we get here, it means a document with matching credentials was found.
         return true;
 
     } catch (error) {
