@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read access to the admin collection for authentication checks
+    match /admin/{userId} {
+      allow read: if true;
+      allow write: if false; // Protect admin credentials from being written by clients
+    }
+
+    // Lock down all other collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "admin",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "credentialName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "credentialPassword",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ]
+}
