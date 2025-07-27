@@ -2,35 +2,28 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow admin login check
+    // Allow read access for admin credentials check
     match /admin/{docId} {
       allow read: if true;
-      allow write: if false; // Admins are managed directly in the console
+      allow write: if false; // Should be managed via Admin SDK or Console
     }
-
-    // Allow creating users
+    
+    // Allow read/write for other collections for now
+    // TODO: Add role-based security rules
     match /users/{userId} {
-      allow read, write: if true; // In production, restrict to authenticated admins
+      allow read, write: if true;
     }
 
-    // Allow managing classes
     match /classes/{classId} {
-      allow read, write: if true; // In production, restrict to authenticated admins/teachers
+      allow read, write: if true;
     }
 
-    // Allow managing announcements
     match /announcements/{announcementId} {
-      allow read, write: if true; // In production, restrict to authenticated admins
+      allow read, write: if true;
     }
 
-    // Allow managing fees
     match /fees/{feeId} {
-      allow read, write: if true; // In production, restrict to authenticated admins
-    }
-
-    // Default deny for any other collection
-    match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
